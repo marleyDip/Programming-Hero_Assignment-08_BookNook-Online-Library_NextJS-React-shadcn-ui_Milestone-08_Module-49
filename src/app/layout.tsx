@@ -9,6 +9,7 @@ import { Toaster } from "sonner";
 
 import Footer from "@/components/footer";
 import Navbar from "@/components/navbar";
+import SplashScreen from "@/components/splash-screen";
 import { ThemeProvider } from "@/components/theme-provider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -48,7 +49,9 @@ export default function RootLayout({
         suppressHydrationWarning
         className="relative isolate flex min-h-full flex-col bg-background text-foreground"
       >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <SplashScreen />
+
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           {/* ambient glow div stays here */}
           <div
             aria-hidden
