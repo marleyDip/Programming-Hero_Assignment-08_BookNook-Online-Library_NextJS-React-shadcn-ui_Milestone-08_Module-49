@@ -46,7 +46,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       title={isDark ? "Light mode" : "Dark mode"}
       className={cn(
         buttonVariants({ variant: "ghost", size: "icon" }),
-        "group relative size-9 overflow-hidden rounded-full transition-all duration-300 hover:bg-foreground/[0.06] active:scale-90",
+        "group relative size-9 overflow-hidden rounded-full transition-all duration-300 hover:bg-foreground/6 active:scale-90",
         className,
       )}
     >

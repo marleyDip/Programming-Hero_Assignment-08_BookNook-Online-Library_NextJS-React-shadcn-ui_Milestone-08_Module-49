@@ -1,34 +1,25 @@
 "use client";
 
+import { authClient } from "@/lib/auth-client";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   BookMarked,
   BookOpen,
   BookPlus,
   Library,
-  LogOut,
   Menu,
   Repeat2,
-  User,
   type LucideIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -37,14 +28,81 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { UserMenu } from "./user-menu";
 
 // AUTH PLACEHOLDER: replace with your real auth (NextAuth, Firebase, etc.)
-type AppUser = { name: string; email: string; photoURL?: string | null };
+/* type AppUser = { name: string; email: string; photoURL?: string | null };
 
 function useAuth(): { user: AppUser | null; logout: () => void } {
   // Example: const { data } = useSession(); return { user: data?.user ?? null, logout: () => signOut() }
   const [user, setUser] = useState<AppUser | null>(null); // set a user object to preview the logged-in state
   return { user, logout: () => setUser(null) };
+} */
+
+// Auth (Better Auth session)
+type AppUser = { name: string; email: string; photoURL?: string | null };
+
+// Remembers (in this browser) whether the last visit was logged in, so the
+// loading skeleton can match what will appear: avatar & private links for a
+// returning member, or Login / Register buttons for a visitor.
+const AUTH_HINT_KEY = "booknook:authed";
+
+const subscribeHint = (cb: () => void) => {
+  window.addEventListener("storage", cb);
+  return () => window.removeEventListener("storage", cb);
+};
+
+const readHint = () => {
+  try {
+    return localStorage.getItem(AUTH_HINT_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+
+function useAuth(): {
+  user: AppUser | null;
+  pending: boolean;
+  likelyAuthed: boolean;
+  logout: () => Promise<void>;
+} {
+  const router = useRouter();
+  const { data, isPending } = authClient.useSession();
+
+  const likelyAuthed = useSyncExternalStore(
+    subscribeHint,
+    readHint,
+    () => false,
+  );
+
+  const user: AppUser | null = data?.user
+    ? {
+        name: data.user.name,
+        email: data.user.email,
+        photoURL: data.user.image,
+      }
+    : null;
+
+  // once the session is known, remember it for the next page load
+  const isAuthed = Boolean(data?.user);
+
+  useEffect(() => {
+    if (isPending) return;
+
+    try {
+      localStorage.setItem(AUTH_HINT_KEY, isAuthed ? "1" : "0");
+    } catch {}
+  }, [isPending, isAuthed]);
+
+  async function logout() {
+    await authClient.signOut();
+
+    toast.success("Logged out successfully.");
+    router.push("/");
+    router.refresh();
+  }
+
+  return { user, pending: isPending, likelyAuthed, logout };
 }
 
 // Links
@@ -89,13 +147,58 @@ export function Logo() {
   );
 }
 
+// Loading placeholders (shown while authClient.useSession() is loading)
+function LinkSkeletons() {
+  return (
+    <>
+      {["w-[5.5rem]", "w-[5.5rem]", "w-[6.5rem]"].map((w, i) => (
+        <span
+          key={i}
+          aria-hidden
+          style={{ animationDelay: `${i * 120}ms` }}
+          className={cn("h-8 animate-pulse rounded-full bg-muted", w)}
+        />
+      ))}
+    </>
+  );
+}
+
+function AuthButtonsSkeleton() {
+  return (
+    <div role="status" className="flex items-center gap-2">
+      <span className="hidden h-10 w-18 animate-pulse rounded-full bg-muted sm:block" />
+
+      <span
+        className="h-10 w-23 animate-pulse rounded-full bg-muted"
+        style={{ animationDelay: "120ms" }}
+      />
+
+      <span className="sr-only">Loading</span>
+    </div>
+  );
+}
+
+function AccountLoading() {
+  return (
+    <div role="status" aria-live="polite" className="relative size-9">
+      <span className="absolute inset-0 animate-pulse rounded-full bg-muted" />
+
+      <span className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-emerald-500 animation-duration-[0.9s]" />
+
+      <span className="sr-only">Loading your account</span>
+    </div>
+  );
+}
+
 // Desktop links with gliding hover pill & gliding active underline
 function DesktopLinks({
   links,
   pathname,
+  loading,
 }: {
   links: NavLink[];
   pathname: string;
+  loading?: boolean;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const reduce = useReducedMotion();
@@ -170,12 +273,14 @@ function DesktopLinks({
           </Link>
         );
       })}
+
+      {loading && <LinkSkeletons />}
     </nav>
   );
 }
 
 // User menu
-function UserMenu({ user, onLogout }: { user: AppUser; onLogout: () => void }) {
+/* function UserMenu({ user, onLogout }: { user: AppUser; onLogout: () => void }) {
   const router = useRouter();
 
   const initials = user.name
@@ -205,24 +310,27 @@ function UserMenu({ user, onLogout }: { user: AppUser; onLogout: () => void }) {
         sideOffset={12}
         className="w-64 rounded-2xl border-border/60 bg-popover/90 p-1.5 shadow-xl shadow-black/10 backdrop-blur-xl"
       >
-        <DropdownMenuLabel className="flex items-center gap-3 px-2.5 py-2.5">
-          <Avatar className="size-10">
-            <AvatarImage src={user.photoURL ?? undefined} alt="" />
+        <DropdownMenuGroup>
+          {" "}
+          <DropdownMenuLabel className="flex items-center gap-3 px-2.5 py-2.5">
+            <Avatar className="size-10">
+              <AvatarImage src={user.photoURL ?? undefined} alt="" />
 
-            <AvatarFallback className="bg-linear-to-br from-emerald-500 to-teal-700 text-xs font-semibold text-white">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+              <AvatarFallback className="bg-linear-to-br from-emerald-500 to-teal-700 text-xs font-semibold text-white">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
 
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-foreground">
-              {user.name}
-            </p>
-            <p className="truncate text-xs font-normal text-muted-foreground">
-              {user.email}
-            </p>
-          </div>
-        </DropdownMenuLabel>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {user.name}
+              </p>
+              <p className="truncate text-xs font-normal text-muted-foreground">
+                {user.email}
+              </p>
+            </div>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
@@ -244,7 +352,7 @@ function UserMenu({ user, onLogout }: { user: AppUser; onLogout: () => void }) {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+} */
 
 // Auth buttons
 function AuthButtons() {
@@ -280,10 +388,12 @@ function MobileMenu({
   links,
   pathname,
   loggedIn,
+  loading,
 }: {
   links: NavLink[];
   pathname: string;
   loggedIn: boolean;
+  loading?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -341,7 +451,7 @@ function MobileMenu({
           })}
         </div>
 
-        {!loggedIn && (
+        {!loggedIn && !loading && (
           <div className="mt-2 flex flex-col gap-2 border-t p-4">
             <Link
               href="/login"
@@ -374,7 +484,7 @@ function MobileMenu({
 // Navbar
 export default function Navbar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, pending, likelyAuthed, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -409,17 +519,32 @@ export default function Navbar() {
             links={visibleLinks}
             pathname={pathname}
             loggedIn={!!user}
+            loading={pending && likelyAuthed}
           />
 
           <Logo />
         </div>
 
-        <DesktopLinks links={visibleLinks} pathname={pathname} />
+        <DesktopLinks
+          links={visibleLinks}
+          pathname={pathname}
+          loading={pending && likelyAuthed}
+        />
 
         <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
 
-          {user ? <UserMenu user={user} onLogout={logout} /> : <AuthButtons />}
+          {pending ? (
+            likelyAuthed ? (
+              <AccountLoading />
+            ) : (
+              <AuthButtonsSkeleton />
+            )
+          ) : user ? (
+            <UserMenu user={user} onLogout={logout} />
+          ) : (
+            <AuthButtons />
+          )}
         </div>
       </div>
     </header>
