@@ -46,7 +46,7 @@ export default function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.SubmitEvent<HTMLElement>) {
     e.preventDefault();
     setFormError(null);
 
