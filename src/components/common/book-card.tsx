@@ -1,25 +1,25 @@
 "use client";
 
-/** Place at: components/book-card.tsx */
-
 import { motion } from "framer-motion";
 import { ArrowUpRight, BookOpen, PenLine } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
-import type { Book } from "@/lib/books";
+import type { Book } from "@/lib/books-config";
 import { cn } from "@/lib/utils";
 
 export default function BookCard({
   book,
   index,
+  showBadge,
 }: {
   book: Book;
   index: number;
+  showBadge?: boolean; // defaults to: only the first card
 }) {
   const [imgFailed, setImgFailed] = useState(false);
-  const isNewest = index === 0;
+  const isNewest = showBadge ?? index === 0;
 
   return (
     <motion.article
@@ -41,7 +41,7 @@ export default function BookCard({
       className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/70 bg-card p-3 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:border-emerald-500/40 hover:shadow-2xl hover:shadow-emerald-900/10"
     >
       {/* cursor-following spotlight */}
-      <div className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 [background:radial-linear(320px_circle_at_var(--x,50%)_var(--y,50%),rgba(52,211,153,0.16),transparent_65%)] group-hover:opacity-100" />
+      <div className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 [background:radial-gradient(320px_circle_at_var(--x,50%)_var(--y,50%),rgba(52,211,153,0.16),transparent_65%)] group-hover:opacity-100" />
 
       {/* image */}
       <div className="relative aspect-3/4 overflow-hidden rounded-2xl bg-muted">

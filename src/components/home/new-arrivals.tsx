@@ -1,13 +1,11 @@
-/** Place at: components/new-arrivals.tsx  (server component) */
-
 import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import BookCard from "@/components/common/book-card";
 import { buttonVariants } from "@/components/ui/button";
 import { getLatestBooks } from "@/lib/books";
 import { cn } from "@/lib/utils";
-import BookCard from "./book-card";
 
 const CATEGORIES = [
   "Fiction",
