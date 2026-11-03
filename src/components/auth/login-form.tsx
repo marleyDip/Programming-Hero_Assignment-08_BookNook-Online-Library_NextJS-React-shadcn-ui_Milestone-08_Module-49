@@ -46,7 +46,7 @@ export default function LoginForm() {
       toast.info("Please log in to continue.", { id: "login-required" });
   }, [wasRedirected, justRegistered]);
 
-  async function onSubmit(e: React.SubmitEvent<HTMLElement>) {
+  async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
 

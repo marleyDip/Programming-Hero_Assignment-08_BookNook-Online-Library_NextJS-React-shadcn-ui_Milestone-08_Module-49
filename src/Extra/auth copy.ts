@@ -1,4 +1,3 @@
-/** Place at: src/lib/auth.ts  (server only) */
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { APIError, createAuthMiddleware } from "better-auth/api";

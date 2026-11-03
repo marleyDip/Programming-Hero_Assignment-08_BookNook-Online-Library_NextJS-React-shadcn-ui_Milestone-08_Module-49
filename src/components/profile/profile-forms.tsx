@@ -87,7 +87,7 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
     name.trim() !== user.name || photo.trim() !== (user.image ?? "");
   const previewOk = photo.trim() && isValidUrl(photo.trim());
 
-  async function onSubmit(e: React.SubmitEvent<HTMLElement>) {
+  async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError(null);
 
@@ -188,7 +188,7 @@ export function EmailForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e: React.SubmitEvent<HTMLElement>) {
+  async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError(null);
 
@@ -276,7 +276,7 @@ export function SecurityForm({ hasPassword }: { hasPassword: boolean }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e: React.SubmitEvent<HTMLElement>) {
+  async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError(null);
 

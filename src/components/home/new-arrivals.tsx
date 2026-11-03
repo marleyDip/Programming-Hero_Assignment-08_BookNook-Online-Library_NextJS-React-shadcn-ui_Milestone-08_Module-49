@@ -5,16 +5,17 @@ import { Suspense } from "react";
 import BookCard from "@/components/common/book-card";
 import { buttonVariants } from "@/components/ui/button";
 import { getLatestBooks } from "@/lib/books";
+import { CATEGORIES } from "@/lib/books-config";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES = [
-  "Fiction",
-  "Fantasy",
-  "Sci-Fi",
-  "History",
-  "Self-Help",
-  "Classic",
-];
+// const CATEGORIES = [
+//   "Fiction",
+//   "Fantasy",
+//   "Sci-Fi",
+//   "History",
+//   "Self-Help",
+//   "Classic",
+// ];
 
 async function LatestBooks() {
   const books = await getLatestBooks();
@@ -34,7 +35,7 @@ function CardsSkeleton() {
       className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
       aria-hidden
     >
-      {Array.from({ length: 6 }).map((_, i) => (
+      {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
           className="animate-pulse rounded-3xl border border-border/70 bg-card p-3"

@@ -2,7 +2,6 @@
 
 /**
  * Newsletter section
- * Place at: components/newsletter.tsx
  * Posts to POST {NEXT_PUBLIC_API_URL}/api/newsletter. Without that env var it
  * simulates a successful signup so you can test the design.
  */
@@ -38,24 +37,35 @@ export default function Newsletter() {
   const [message, setMessage] = useState("");
   const [shake, setShake] = useState(0);
 
+  // const isLoading = status === "loading";
+  // const isSuccess = status === "success";
+
   function fail(msg: string) {
     setStatus("error");
+    setMessage(msg);
+
     setShake((n) => n + 1);
     toast.error(msg);
   }
 
-  async function onSubmit(e: React.SubmitEvent<HTMLElement>) {
+  async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (status === "loading") return;
+
     const value = email.trim().toLowerCase();
 
     if (!EMAIL_RE.test(value))
       return fail("Please enter a valid email address.");
 
+    if (!API_URL) {
+      return fail("Newsletter service is currently unavailable.");
+    }
+
     setStatus("loading");
     setMessage("");
 
     try {
-      if (API_URL) {
+      /* if (API_URL) {
         const res = await fetch(`${API_URL}/api/newsletter`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -79,14 +89,43 @@ export default function Newsletter() {
           );
       } else {
         await new Promise((r) => setTimeout(r, 900)); // dummy mode
+      } */
+
+      const res = await fetch(`${API_URL}/api/newsletter`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: value }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      // Duplicate email
+      if (res.status === 409) {
+        setStatus("success");
+        setMessage("You're already on the list. Thanks for being here!");
+
+        toast.info("You're already subscribed", {
+          description: "Thanks for being part of BookNook.",
+        });
+
+        return; // IMPORTANT: stop here
       }
 
+      // Other errors
+      if (!res.ok) {
+        return fail(data.message || "Something went wrong. Please try again.");
+      }
+
+      // Only a new subscription reaches here
       setStatus("success");
       setMessage("Check your inbox soon for your first fresh reads.");
+
       toast.success("Subscribed successfully!", {
         description: "Fresh reads are on their way to your inbox.",
       });
-    } catch {
+    } catch (error) {
+      console.error("Newsletter error:", error);
+
       fail("Couldn't reach the server. Please try again.");
     }
   }

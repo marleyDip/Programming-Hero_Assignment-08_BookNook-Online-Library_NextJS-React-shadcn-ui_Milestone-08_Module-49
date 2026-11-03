@@ -1,5 +1,3 @@
-/** Place at: src/lib/auth-utils.ts */
-
 /** Only allow redirects to pages inside this site (prevents open-redirect attacks). */
 export function safeRedirect(url: string | null | undefined, fallback = "/") {
   if (

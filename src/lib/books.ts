@@ -1,4 +1,4 @@
-/** Place at: src/lib/books.ts  (replaces the earlier version)
+/**
  *  SERVER ONLY: contains "use cache" functions. Client Components must import
  *  types and constants from "@/lib/books-config" instead. */
 
@@ -11,11 +11,11 @@ import {
   type BooksResult,
 } from "@/lib/books-config";
 
-// Set NEXT_PUBLIC_API_URL=http://localhost:5000 in .env.local to use the real API.
+// Set NEXT_PUBLIC_API_URL=http://localhost:8000 in .env.local to use the real API.
 // Without it (or if the API is down) the dummy data below is used.
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-/* ----------------------------- Dummy data ----------------------------- */
+/* Dummy data */
 const RAW: [string, string, string][] = [
   ["Atomic Habits", "James Clear", "Self-Help"],
   ["The Hobbit", "J.R.R. Tolkien", "Fantasy"],
@@ -51,6 +51,8 @@ export const DUMMY_BOOKS: Book[] = RAW.map(([title, author, category], i) => ({
   category,
   image: `https://picsum.photos/seed/booknook-${i + 1}/480/640`,
   createdAt: new Date(Date.UTC(2026, 9, 28 - i * 2, 10)).toISOString(),
+  totalCopies: 3,
+  availableCopies: 3,
 }));
 
 function queryDummy({ category, search, sort, page }: BookQuery): BooksResult {
@@ -60,6 +62,7 @@ function queryDummy({ category, search, sort, page }: BookQuery): BooksResult {
     list = list.filter(
       (b) => b.category.toLowerCase() === category.toLowerCase(),
     );
+
   if (search) {
     const s = search.toLowerCase();
     list = list.filter(
@@ -75,12 +78,14 @@ function queryDummy({ category, search, sort, page }: BookQuery): BooksResult {
     "title-desc": (a: Book, b: Book) => b.title.localeCompare(a.title),
     "author-asc": (a: Book, b: Book) => a.author.localeCompare(b.author),
   }[sort];
+
   list.sort(by);
 
   const total = list.length;
   const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1);
   const safePage = Math.min(Math.max(page, 1), totalPages);
   const start = (safePage - 1) * PAGE_SIZE;
+
   return {
     books: list.slice(start, start + PAGE_SIZE),
     total,
@@ -89,28 +94,31 @@ function queryDummy({ category, search, sort, page }: BookQuery): BooksResult {
   };
 }
 
-/* ------------------------------ Latest 6 ------------------------------ */
+/* Latest 8 */
 async function fetchLatestBooks(): Promise<Book[]> {
   "use cache";
   cacheLife("minutes");
   cacheTag("books");
 
   const res = await fetch(`${API_URL}/api/books/latest`);
+
   if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
   return (await res.json()) as Book[];
 }
 
-/** Latest 6 books, newest first (New Arrivals section) */
+/** Latest 8 books, newest first (New Arrivals section) */
 export async function getLatestBooks(): Promise<Book[]> {
-  if (!API_URL) return DUMMY_BOOKS.slice(0, 6);
+  if (!API_URL) return DUMMY_BOOKS.slice(0, 8);
+
   try {
     return await fetchLatestBooks();
   } catch {
-    return DUMMY_BOOKS.slice(0, 6);
+    return DUMMY_BOOKS.slice(0, 8);
   }
 }
 
-/* ------------------------------- All books ------------------------------- */
+/* All books */
 async function fetchBooks(q: BookQuery): Promise<BooksResult> {
   "use cache";
   cacheLife("minutes");
@@ -121,20 +129,76 @@ async function fetchBooks(q: BookQuery): Promise<BooksResult> {
     limit: String(PAGE_SIZE),
     sort: q.sort,
   });
+
   if (q.category) params.set("category", q.category);
   if (q.search) params.set("search", q.search);
 
   const res = await fetch(`${API_URL}/api/books?${params.toString()}`);
+
   if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
   return (await res.json()) as BooksResult;
 }
 
 /** Filtered, sorted, paginated books (10 per page) */
 export async function getBooks(q: BookQuery): Promise<BooksResult> {
   if (!API_URL) return queryDummy(q);
+
   try {
     return await fetchBooks(q);
   } catch {
     return queryDummy(q);
   }
 }
+
+/**
+ *
+ * Single book
+ * One book by id (Book Details page). Always fresh, because available copies change.
+ *
+ */
+
+/**
+ * Single book
+ * One book by ID (Book Details page).
+ * Always fresh, because available copies change.
+ */
+export async function getBookById(id: string): Promise<Book | null> {
+  // Use dummy data when API is not configured
+  if (!API_URL) {
+    return DUMMY_BOOKS.find((book) => book._id === id) ?? null;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/api/books/${encodeURIComponent(id)}`, {
+      cache: "no-store",
+    });
+
+    // Book genuinely doesn't exist
+    if (res.status === 404 || res.status === 400) {
+      return null;
+    }
+
+    if (!res.ok) {
+      throw new Error(`Request failed: ${res.status}`);
+    }
+
+    return (await res.json()) as Book;
+  } catch {
+    // Fallback to dummy data if API is unavailable
+    return DUMMY_BOOKS.find((book) => book._id === id) ?? null;
+  }
+}
+
+/* export async function getBookById(id: string): Promise<Book | null> {
+  if (!API_URL) return DUMMY_BOOKS.find((b) => b._id === id) ?? null;
+
+  const res = await fetch(`${API_URL}/api/books/${encodeURIComponent(id)}`, {
+    cache: "no-store",
+  });
+
+  if (res.status === 404 || res.status === 400) return null;
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
+  return (await res.json()) as Book;
+} */

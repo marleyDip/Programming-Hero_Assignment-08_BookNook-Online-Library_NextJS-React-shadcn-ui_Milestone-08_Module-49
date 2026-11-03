@@ -1,12 +1,13 @@
 /**
  *
- * Place at: src/proxy.ts   (Next.js 16 renamed "middleware" to "proxy")
+ * Next.js 16 renamed "middleware" to "proxy")
  *
  * Sends logged-out visitors away from private routes to /login?callbackUrl=...
  * This is an optimistic cookie check. Always verify the session again on the
  * server (auth.api.getSession) before returning private data.
  *
  */
+
 import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -42,6 +43,7 @@ export const config = {
     "/my-books/:path*",
     "/my-borrows/:path*",
     "/profile/:path*",
+    "/books/:path+",
     "/login",
     "/register",
   ],

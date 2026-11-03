@@ -5,12 +5,14 @@ import {
   LoaderCircle,
   TriangleAlert,
 } from "lucide-react";
+import { Suspense } from "react";
 import { Toaster } from "sonner";
 
 import Footer from "@/components/footer";
 import Navbar from "@/components/navbar";
 import SplashScreen from "@/components/splash-screen";
 import { ThemeProvider } from "@/components/theme-provider";
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -25,20 +27,32 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
+/* export const metadata: Metadata = {
   title: {
     default: "BookNook — Read, borrow, discover",
     template: "%s | BookNook",
   },
   description:
     "BookNook is a community library where readers discover books, add their own titles and borrow from each other.",
+}; */
+
+export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  ),
+
+  title: {
+    default: "BookNook - Read, borrow, discover",
+    template: "%s | BookNook",
+  },
+
+  description:
+    "BookNook is a community library where readers discover books, add their own titles and borrow from each other.",
+
+  applicationName: "BookNook",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
@@ -64,12 +78,16 @@ export default function RootLayout({
             <div className="absolute bottom-0 left-1/2 h-90 w-150 -translate-x-1/2 rounded-full bg-amber-200/20 blur-3xl dark:bg-amber-400/5" />
           </div>
 
-          <Navbar />
+          {/* Navbar */}
+          <Suspense fallback={<div className="h-18" />}>
+            <Navbar />
+          </Suspense>
 
           <main className="flex-1">{children}</main>
 
           <Footer />
 
+          {/* Sonner Toaster */}
           <Toaster
             theme="dark"
             position="bottom-right"
@@ -141,7 +159,11 @@ export default function RootLayout({
   );
 }
 
-// export default function RootLayout({ children }: LayoutProps<"/">) {
+// export default function RootLayout({
+//   children,
+// }: {
+//   children: React.ReactNode;
+// }) {
 //   return (
 //     <html
 //       lang="en"
