@@ -8,6 +8,7 @@ import { useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import type { Book } from "@/lib/books-config";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 export default function BookCard({
   book,
@@ -54,8 +55,7 @@ export default function BookCard({
             </div>
           </div>
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={book.image}
             alt={`Cover of ${book.title}`}
             loading="lazy"
