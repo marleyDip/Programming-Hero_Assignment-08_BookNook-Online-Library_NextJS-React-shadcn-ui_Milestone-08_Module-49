@@ -2,18 +2,17 @@
 
 /*Opens with the book's old data already filled in. */
 
-import
-    {
-        Check,
-        ImagePlus,
-        Loader2,
-        Minus,
-        Pencil,
-        PenLine,
-        Plus,
-        Sparkles,
-        Type,
-    } from "lucide-react";
+import {
+  Check,
+  ImagePlus,
+  Loader2,
+  Minus,
+  Pencil,
+  PenLine,
+  Plus,
+  Sparkles,
+  Type,
+} from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -21,17 +20,17 @@ import { toast } from "sonner";
 import { Field } from "@/components/auth/field";
 import Modal from "@/components/common/modal";
 import { updateBookAction } from "@/lib/actions";
-import
-    {
-        CATEGORY_ICONS,
-        CONDITIONS,
-        LANGUAGES,
-        MAX_DESC,
-        MAX_FILE_MB,
-        uploadToImgbb,
-    } from "@/lib/book-form";
+import {
+  CATEGORY_ICONS,
+  CONDITIONS,
+  LANGUAGES,
+  MAX_DESC,
+  MAX_FILE_MB,
+  uploadToImgbb,
+} from "@/lib/book-form";
 import { CATEGORIES, type Book } from "@/lib/books-config";
 import { cn } from "@/lib/utils";
+import LanguageDropdown from "./language-dropdown";
 
 type Errors = Partial<
   Record<"title" | "author" | "description" | "year", string>
@@ -349,7 +348,13 @@ export default function EditBookModal({
             onChange={(e) => setYear(e.target.value.replace(/\D/g, ""))}
           />
 
-          <div>
+          <LanguageDropdown
+            value={language}
+            onChange={setLanguage}
+            options={LANGUAGES}
+          />
+
+          {/* <div>
             <label
               htmlFor="edit-lang"
               className="mb-2 block text-sm font-medium"
@@ -367,7 +372,7 @@ export default function EditBookModal({
                 <option key={l}>{l}</option>
               ))}
             </select>
-          </div>
+          </div> */}
         </div>
 
         {/* image */}

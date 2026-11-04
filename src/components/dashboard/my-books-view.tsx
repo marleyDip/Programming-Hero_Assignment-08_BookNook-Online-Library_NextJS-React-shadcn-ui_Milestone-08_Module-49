@@ -81,6 +81,7 @@ function MyBookCard({
             fill
             sizes="112px"
             loading="lazy"
+            // loading="eager" // Largest Contentful Paint (LCP)
             onError={() => setImgFailed(true)}
             className="object-cover transition-transform duration-500 group-hover:scale-110"
           />
