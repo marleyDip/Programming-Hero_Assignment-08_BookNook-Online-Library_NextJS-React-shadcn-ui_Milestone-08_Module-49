@@ -226,7 +226,13 @@ export default function MyBorrowsView({
 }: {
   borrows: Borrow[];
 }) {
-  const [borrows, setBorrows] = useState(initial);
+  const [borrowState, setBorrowState] = useState({ initial, borrows: initial });
+
+  if (borrowState.initial !== initial) {
+    setBorrowState({ initial, borrows: initial });
+  }
+  const borrows = borrowState.borrows;
+
   const [tab, setTab] = useState<"active" | "history">("active");
 
   if (borrows.length === 0) {
@@ -247,8 +253,9 @@ export default function MyBorrowsView({
   const list = tab === "active" ? active : history;
 
   function markReturned(id: string) {
-    setBorrows((all) =>
-      all.map((b) =>
+    setBorrowState((state) => ({
+      ...state,
+      borrows: state.borrows.map((b) =>
         b._id === id
           ? {
               ...b,
@@ -257,7 +264,7 @@ export default function MyBorrowsView({
             }
           : b,
       ),
-    );
+    }));
   }
 
   return (

@@ -1,5 +1,7 @@
 "use client";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 import {
   AnimatePresence,
   animate,
@@ -17,6 +19,7 @@ import {
   User,
   type LucideIcon,
 } from "lucide-react";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
@@ -26,9 +29,28 @@ import {
   ProfileForm,
   SecurityForm,
 } from "@/components/profile/profile-forms";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import { authClient } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
+import { DashboardStat } from "@/lib/dashboard-stats";
+
+// interface ProfileViewProps {
+//   dashboardStats: {
+//     label: string;
+//     value: number;
+//     icon: LucideIcon;
+//     href: string;
+//   }[];
+// }
+
+interface ProfileViewProps {
+  dashboardStats: DashboardStat[];
+}
+
+const STAT_ICONS: Record<DashboardStat["icon"], LucideIcon> = {
+  "book-plus": BookPlus,
+  "book-marked": BookMarked,
+  "repeat-2": Repeat2,
+};
 
 type TabId = "profile" | "email" | "security";
 
@@ -44,7 +66,7 @@ const TABS: { id: TabId; label: string; hint: string; icon: LucideIcon }[] = [
 ];
 
 // TODO: replace these sample numbers with real counts from your Express API
-const STATS: {
+/* const STATS: {
   label: string;
   value: number;
   icon: LucideIcon;
@@ -53,7 +75,7 @@ const STATS: {
   { label: "Books added", value: 12, icon: BookPlus, href: "/my-books" },
   { label: "Books borrowed", value: 8, icon: BookMarked, href: "/my-borrows" },
   { label: "Reading now", value: 2, icon: Repeat2, href: "/my-borrows" },
-];
+]; */
 
 function Counter({ to }: { to: number }) {
   const mv = useMotionValue(0);
@@ -104,7 +126,7 @@ export function ProfileSkeleton() {
 }
 
 // View
-export default function ProfileView() {
+export default function ProfileView({ dashboardStats }: ProfileViewProps) {
   const { data: session, isPending } = authClient.useSession();
 
   const [tab, setTab] = useState<TabId>("profile");
@@ -213,8 +235,9 @@ export default function ProfileView() {
 
           {/* stats */}
           <div className="mt-7 grid grid-cols-3 gap-3 sm:gap-4">
-            {STATS.map((s, i) => {
-              const Icon = s.icon;
+            {dashboardStats.map((s, i) => {
+              const Icon = STAT_ICONS[s.icon];
+
               return (
                 <motion.div
                   key={s.label}
