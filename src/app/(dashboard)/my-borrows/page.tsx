@@ -8,7 +8,7 @@ import { ErrorNote, ListSkeleton } from "@/components/dashboard/dash-ui";
 import MyBorrowsView from "@/components/dashboard/my-borrows-view";
 
 import { apiFetch } from "@/lib/api";
-import { Borrow } from "@/lib/dashboard-types";
+import { ApiResponse, Borrow } from "@/lib/dashboard-types";
 import { getSessionUser } from "@/lib/session";
 import { getDaysLeft } from "@/lib/utils/date";
 
@@ -26,19 +26,24 @@ async function MyBorrowsData() {
   let borrows: Borrow[];
 
   try {
-    const raw = await apiFetch<Omit<Borrow, "daysLeft">[]>(
+    const response = await apiFetch<ApiResponse<Omit<Borrow, "daysLeft">[]>>(
       `/api/borrows?email=${encodeURIComponent(user.email)}`,
     );
 
-    // days left are worked out here on the server (after the session lookup, so the page is already dynamic)
+    if (!response.success) {
+      throw new Error(response.message);
+    }
+
+    // Calculate days left on the server
     const now = new Date().getTime();
 
-    borrows = raw.map((b) => ({
-      ...b,
-      daysLeft: getDaysLeft(b.returnDate, now),
+    borrows = response.data.map((borrow) => ({
+      ...borrow,
+      daysLeft: getDaysLeft(borrow.returnDate, now),
     }));
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Please try again.";
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Please try again.";
 
     return <ErrorNote message={message} />;
   }
@@ -61,6 +66,29 @@ export default function MyBorrowsPage() {
     </>
   );
 }
+
+/* 
+let borrows: Borrow[];
+
+  try {
+    const raw = await apiFetch<Omit<Borrow, "daysLeft">[]>(
+      `/api/borrows?email=${encodeURIComponent(user.email)}`,
+    );
+
+    // days left are worked out here on the server (after the session lookup, so the page is already dynamic)
+    const now = new Date().getTime();
+
+    borrows = raw.map((b) => ({
+      ...b,
+      daysLeft: getDaysLeft(b.returnDate, now),
+    }));
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Please try again.";
+
+    return <ErrorNote message={message} />;
+  }
+
+*/
 
 /* 
 try {

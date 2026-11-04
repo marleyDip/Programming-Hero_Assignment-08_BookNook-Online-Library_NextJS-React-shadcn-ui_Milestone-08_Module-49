@@ -124,6 +124,8 @@ export default function Modal({
               size === "lg" ? "max-w-2xl" : "max-w-md",
               tone === "danger" ? "border-rose-500/30" : "border-border/70",
             )}
+
+            // className={cn( "relative my-auto flex max-h-[calc(100dvh-2rem)]" )}
           >
             <div
               className={cn(
@@ -168,6 +170,10 @@ export default function Modal({
                 <X className="size-4" />
               </button>
             </div>
+
+            {/* <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-6 pb-6 pt-3">
+              {children}
+            </div> */}
 
             <div className="overflow-y-auto px-6 pb-6 pt-3">{children}</div>
           </motion.div>

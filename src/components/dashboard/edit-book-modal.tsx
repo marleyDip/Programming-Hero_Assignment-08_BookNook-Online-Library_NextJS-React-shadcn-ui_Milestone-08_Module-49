@@ -2,17 +2,18 @@
 
 /*Opens with the book's old data already filled in. */
 
-import {
-  Check,
-  ImagePlus,
-  Loader2,
-  Minus,
-  Pencil,
-  PenLine,
-  Plus,
-  Sparkles,
-  Type,
-} from "lucide-react";
+import
+    {
+        Check,
+        ImagePlus,
+        Loader2,
+        Minus,
+        Pencil,
+        PenLine,
+        Plus,
+        Sparkles,
+        Type,
+    } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -20,14 +21,15 @@ import { toast } from "sonner";
 import { Field } from "@/components/auth/field";
 import Modal from "@/components/common/modal";
 import { updateBookAction } from "@/lib/actions";
-import {
-  CATEGORY_ICONS,
-  CONDITIONS,
-  LANGUAGES,
-  MAX_DESC,
-  MAX_FILE_MB,
-  uploadToImgbb,
-} from "@/lib/book-form";
+import
+    {
+        CATEGORY_ICONS,
+        CONDITIONS,
+        LANGUAGES,
+        MAX_DESC,
+        MAX_FILE_MB,
+        uploadToImgbb,
+    } from "@/lib/book-form";
 import { CATEGORIES, type Book } from "@/lib/books-config";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +48,8 @@ export default function EditBookModal({
   onClose: () => void;
   onSaved: (updated: Book) => void;
 }) {
+  // console.log(book);
+
   // the form starts with the OLD values
   const [title, setTitle] = useState(book.title);
   const [author, setAuthor] = useState(book.author);
@@ -200,17 +204,17 @@ export default function EditBookModal({
             aria-label="Category"
             className="flex flex-wrap gap-2"
           >
-            {CATEGORIES.map((category) => {
-              const Icon = CATEGORY_ICONS[category] ?? Sparkles;
-              const active = category === category;
+            {CATEGORIES.map((item) => {
+              const Icon = CATEGORY_ICONS[item] ?? Sparkles;
+              const active = category === item;
 
               return (
                 <button
-                  key={category}
+                  key={item}
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  onClick={() => setCategory(category)}
+                  onClick={() => setCategory(item)}
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-emerald-500/60 active:scale-95",
                     active
@@ -218,7 +222,7 @@ export default function EditBookModal({
                       : "border-border text-muted-foreground hover:border-emerald-500/40 hover:text-foreground",
                   )}
                 >
-                  <Icon className="size-4" /> {category}
+                  <Icon className="size-4" /> {item}
                   {active && <Check className="size-3.5" strokeWidth={3.5} />}
                 </button>
               );
@@ -370,14 +374,13 @@ export default function EditBookModal({
         <div>
           <p className="mb-2 text-sm font-medium">Book image</p>
           <div className="flex items-center gap-4 rounded-2xl border border-border bg-background/60 p-3">
-            {}
             {(preview || book.image) && (
               <Image
                 src={preview ?? book.image}
                 alt="Cover"
                 width={72}
                 height={96}
-                unoptimized
+                // unoptimized
                 className="h-24 w-18 rounded-lg object-cover shadow-md"
               />
             )}

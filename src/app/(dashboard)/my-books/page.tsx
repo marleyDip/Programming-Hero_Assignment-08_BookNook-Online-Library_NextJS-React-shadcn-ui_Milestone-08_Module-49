@@ -11,6 +11,7 @@ import MyBooksView from "@/components/dashboard/my-books-view";
 
 import { apiFetch } from "@/lib/api";
 import type { Book } from "@/lib/books-config";
+import { ApiResponse } from "@/lib/dashboard-types";
 import { getSessionUser } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -26,9 +27,15 @@ async function MyBooksData() {
 
   let books: Book[];
   try {
-    books = await apiFetch<Book[]>(
+    const response = await apiFetch<ApiResponse<Book[]>>(
       `/api/my-books?email=${encodeURIComponent(user.email)}`,
     );
+
+    if (!response.success) {
+      throw new Error(response.message);
+    }
+
+    books = response.data;
   } catch (e) {
     const message = e instanceof Error ? e.message : "Please try again.";
 
@@ -53,6 +60,47 @@ export default function MyBooksPage() {
     </>
   );
 }
+
+/* let books: Book[];
+
+try {
+  const response = await apiFetch<{
+    success: boolean;
+    message: string;
+    data: Book[];
+    total: number;
+  }>(
+    `/api/my-books?email=${encodeURIComponent(user.email)}`,
+  );
+
+  if (!response.success) {
+    throw new Error(response.message || "Failed to fetch your books.");
+  }
+
+  books = response.data;
+} catch (e) {
+  const message = e instanceof Error ? e.message : "Please try again.";
+
+  return <ErrorNote message={message} />;
+}
+
+return <MyBooksView books={books} />;
+*/
+
+/* let books: Book[];
+  try {
+    books = await apiFetch<Book[]>(
+      `/api/my-books?email=${encodeURIComponent(user.email)}`,
+    );
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Please try again.";
+
+    return <ErrorNote message={message} />;
+  }
+
+  return <MyBooksView books={books} />;
+}
+*/
 
 /* Error: Avoid constructing JSX within try/catch
 

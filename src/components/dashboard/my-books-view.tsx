@@ -160,6 +160,8 @@ function MyBookCard({
 }
 
 export default function MyBooksView({ books: initial }: { books: Book[] }) {
+  // console.log(initial);
+
   const [books, setBooks] = useState(initial);
   const [editing, setEditing] = useState<Book | null>(null);
   const [deleting, setDeleting] = useState<Book | null>(null);
@@ -256,6 +258,7 @@ export default function MyBooksView({ books: initial }: { books: Book[] }) {
             setBooks((list) =>
               list.map((b) => (b._id === updated._id ? updated : b)),
             );
+
             setEditing(null);
           }}
         />

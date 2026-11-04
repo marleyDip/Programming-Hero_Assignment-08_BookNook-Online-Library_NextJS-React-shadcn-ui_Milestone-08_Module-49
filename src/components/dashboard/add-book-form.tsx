@@ -304,6 +304,8 @@ export default function AddBookForm() {
 
     try {
       setBusy("upload");
+      // const imageUrl = await uploadToImgbb(file as File, "booknook-book-cover");
+
       const imageUrl = await uploadToImgbb(file as File);
 
       setBusy("save");

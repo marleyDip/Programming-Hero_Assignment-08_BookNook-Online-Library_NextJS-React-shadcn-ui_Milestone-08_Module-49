@@ -53,7 +53,10 @@ export const MAX_DESC = 300;
 export const MAX_FILE_MB = 5;
 
 /** Uploads an image to imgbb and returns its public URL */
-export async function uploadToImgbb(file: File): Promise<string> {
+export async function uploadToImgbb(
+  file: File,
+  name?: string,
+): Promise<string> {
   const key = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
 
   if (!key)
@@ -63,6 +66,10 @@ export async function uploadToImgbb(file: File): Promise<string> {
 
   const fd = new FormData();
   fd.append("image", file);
+
+  if (name) {
+    fd.append("name", name);
+  }
 
   const res = await fetch(`https://api.imgbb.com/1/upload?key=${key}`, {
     method: "POST",

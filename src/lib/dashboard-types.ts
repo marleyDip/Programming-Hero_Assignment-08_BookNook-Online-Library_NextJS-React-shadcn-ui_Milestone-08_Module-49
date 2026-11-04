@@ -34,3 +34,9 @@ export type AddBookInput = {
 };
 
 export type UpdateBookInput = AddBookInput;
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}

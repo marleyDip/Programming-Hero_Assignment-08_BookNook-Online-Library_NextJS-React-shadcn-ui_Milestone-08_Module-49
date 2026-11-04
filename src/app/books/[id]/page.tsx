@@ -8,6 +8,7 @@ import BookDetailsView, {
 
 import { apiFetch } from "@/lib/api";
 import { getBookById } from "@/lib/books";
+import { ApiResponse } from "@/lib/dashboard-types";
 import { getSessionUser } from "@/lib/session";
 
 /* export const metadata: Metadata = {
@@ -100,21 +101,18 @@ async function Details({ params }: { params: Promise<{ id: string }> }) {
   let alreadyBorrowed = false;
 
   try {
-    const borrows = await apiFetch<{ bookId: string; status: string }[]>(
-      `/api/borrows?email=${encodeURIComponent(user.email)}`,
-    );
+    const response = await apiFetch<
+      ApiResponse<{ bookId: string; status: string }[]>
+    >(`/api/borrows?email=${encodeURIComponent(user.email)}`);
 
-    alreadyBorrowed = borrows.some(
-      (borrow) => String(borrow.bookId) === id && borrow.status === "borrowed",
-    );
-  } catch (error) {
-    // API not connected yet: just show the borrow button
-
-    alreadyBorrowed = false;
-
-    if (process.env.NODE_ENV === "development") {
-      console.error("Failed to fetch borrow status:", error);
+    if (response.success) {
+      alreadyBorrowed = response.data.some(
+        (borrow) =>
+          String(borrow.bookId) === id && borrow.status === "borrowed",
+      );
     }
+  } catch (error) {
+    console.error("Check borrowing status error:", error);
   }
 
   // const isOwner = Boolean(
