@@ -5,7 +5,6 @@ import {
   LoaderCircle,
   TriangleAlert,
 } from "lucide-react";
-import { Suspense } from "react";
 import { Toaster } from "sonner";
 
 import Footer from "@/components/footer";
@@ -56,6 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
@@ -79,9 +79,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
 
           {/* Navbar */}
-          <Suspense fallback={<div className="h-18" />}>
+          <Navbar />
+
+          {/* <Suspense fallback={<div className="h-18" />}>
             <Navbar />
-          </Suspense>
+          </Suspense> */}
 
           <main className="flex-1">{children}</main>
 

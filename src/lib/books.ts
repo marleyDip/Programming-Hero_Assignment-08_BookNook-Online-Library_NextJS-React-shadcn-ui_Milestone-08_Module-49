@@ -1,4 +1,4 @@
-/**
+/** Place at: src/lib/books.ts  (replaces the earlier version)
  *  SERVER ONLY: contains "use cache" functions. Client Components must import
  *  types and constants from "@/lib/books-config" instead. */
 
@@ -11,34 +11,56 @@ import {
   type BooksResult,
 } from "@/lib/books-config";
 
-// Set NEXT_PUBLIC_API_URL=http://localhost:8000 in .env.local to use the real API.
+// Set NEXT_PUBLIC_API_URL=http://localhost:5000 in .env.local to use the real API.
 // Without it (or if the API is down) the dummy data below is used.
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+type ApiResponse<T> = {
+  success: boolean;
+  message?: string;
+  data: T;
+};
+
+type PaginatedBooksData = {
+  books: Book[];
+  pagination?: {
+    total: number;
+    page: number;
+    totalPages: number;
+  };
+  total?: number;
+  page?: number;
+  totalPages?: number;
+};
+
+function getDummyBook(id: string): Book | null {
+  return DUMMY_BOOKS.find((book) => book._id === id) ?? null;
+}
+
 /* Dummy data */
 const RAW: [string, string, string][] = [
-  ["Atomic Habits", "James Clear", "Self-Help"],
-  ["The Hobbit", "J.R.R. Tolkien", "Fantasy"],
+  ["Atomic Habits", "James Clear", "Others"],
+  ["The Hobbit", "J.R.R. Tolkien", "Kids"],
   ["Sapiens", "Yuval Noah Harari", "History"],
-  ["Dune", "Frank Herbert", "Sci-Fi"],
-  ["Pride and Prejudice", "Jane Austen", "Classic"],
+  ["Dune", "Frank Herbert", "Science"],
+  ["Pride and Prejudice", "Jane Austen", "Fiction"],
   ["The Alchemist", "Paulo Coelho", "Fiction"],
-  ["The Hitchhiker's Guide to the Galaxy", "Douglas Adams", "Sci-Fi"],
+  ["The Hitchhiker's Guide to the Galaxy", "Douglas Adams", "Science"],
   ["A Brief History of Time", "Stephen Hawking", "Science"],
-  ["Gone Girl", "Gillian Flynn", "Mystery"],
-  ["The Name of the Wind", "Patrick Rothfuss", "Fantasy"],
-  ["Deep Work", "Cal Newport", "Self-Help"],
+  ["Gone Girl", "Gillian Flynn", "Fiction"],
+  ["The Name of the Wind", "Patrick Rothfuss", "Kids"],
+  ["Deep Work", "Cal Newport", "Others"],
   ["Guns, Germs, and Steel", "Jared Diamond", "History"],
-  ["To Kill a Mockingbird", "Harper Lee", "Classic"],
-  ["The Da Vinci Code", "Dan Brown", "Mystery"],
+  ["To Kill a Mockingbird", "Harper Lee", "Fiction"],
+  ["The Da Vinci Code", "Dan Brown", "Fiction"],
   ["Cosmos", "Carl Sagan", "Science"],
   ["1984", "George Orwell", "Fiction"],
-  ["Neuromancer", "William Gibson", "Sci-Fi"],
-  ["The Fellowship of the Ring", "J.R.R. Tolkien", "Fantasy"],
-  ["Thinking, Fast and Slow", "Daniel Kahneman", "Self-Help"],
+  ["Neuromancer", "William Gibson", "Science"],
+  ["The Fellowship of the Ring", "J.R.R. Tolkien", "Kids"],
+  ["Thinking, Fast and Slow", "Daniel Kahneman", "Others"],
   ["The Silk Roads", "Peter Frankopan", "History"],
-  ["Great Expectations", "Charles Dickens", "Classic"],
-  ["The Girl with the Dragon Tattoo", "Stieg Larsson", "Mystery"],
+  ["Great Expectations", "Charles Dickens", "Fiction"],
+  ["The Girl with the Dragon Tattoo", "Stieg Larsson", "Fiction"],
   ["The Selfish Gene", "Richard Dawkins", "Science"],
   ["Life of Pi", "Yann Martel", "Fiction"],
 ];
@@ -55,8 +77,11 @@ export const DUMMY_BOOKS: Book[] = RAW.map(([title, author, category], i) => ({
   availableCopies: 3,
 }));
 
-function queryDummy({ category, search, sort, page }: BookQuery): BooksResult {
-  let list = [...DUMMY_BOOKS];
+function queryList(
+  source: Book[],
+  { category, search, sort, page }: BookQuery,
+): BooksResult {
+  let list = [...source];
 
   if (category)
     list = list.filter(
@@ -78,7 +103,6 @@ function queryDummy({ category, search, sort, page }: BookQuery): BooksResult {
     "title-desc": (a: Book, b: Book) => b.title.localeCompare(a.title),
     "author-asc": (a: Book, b: Book) => a.author.localeCompare(b.author),
   }[sort];
-
   list.sort(by);
 
   const total = list.length;
@@ -94,33 +118,50 @@ function queryDummy({ category, search, sort, page }: BookQuery): BooksResult {
   };
 }
 
+const queryDummy = (q: BookQuery) => queryList(DUMMY_BOOKS, q);
+
 /* Latest 8 */
 async function fetchLatestBooks(): Promise<Book[]> {
   "use cache";
+
   cacheLife("minutes");
   cacheTag("books");
 
   const res = await fetch(`${API_URL}/api/books/latest`);
 
-  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch latest books: ${res.status}`);
+  }
 
-  return (await res.json()) as Book[];
+  const payload: ApiResponse<Book[]> = await res.json();
+
+  if (!payload.success) {
+    throw new Error(payload.message || "Failed to fetch latest books.");
+  }
+
+  return payload.data;
 }
 
 /** Latest 8 books, newest first (New Arrivals section) */
 export async function getLatestBooks(): Promise<Book[]> {
-  if (!API_URL) return DUMMY_BOOKS.slice(0, 8);
+  if (!API_URL) {
+    return DUMMY_BOOKS.slice(0, 8);
+  }
 
   try {
-    return await fetchLatestBooks();
-  } catch {
+    const books = await fetchLatestBooks();
+    return books.slice(0, 8);
+  } catch (error) {
+    console.error("Latest books fetch error:", error);
+
     return DUMMY_BOOKS.slice(0, 8);
   }
 }
 
 /* All books */
-async function fetchBooks(q: BookQuery): Promise<BooksResult> {
+async function fetchBooks(q: BookQuery): Promise<PaginatedBooksData> {
   "use cache";
+
   cacheLife("minutes");
   cacheTag("books");
 
@@ -135,38 +176,54 @@ async function fetchBooks(q: BookQuery): Promise<BooksResult> {
 
   const res = await fetch(`${API_URL}/api/books?${params.toString()}`);
 
-  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch books: ${res.status}`);
+  }
 
-  return (await res.json()) as BooksResult;
+  const payload: ApiResponse<PaginatedBooksData> = await res.json();
+
+  if (!payload.success) {
+    throw new Error(payload.message || "Failed to fetch books.");
+  }
+
+  return payload.data;
 }
 
-/** Filtered, sorted, paginated books (10 per page) */
+/** Filtered, sorted, paginated books */
 export async function getBooks(q: BookQuery): Promise<BooksResult> {
-  if (!API_URL) return queryDummy(q);
+  if (!API_URL) {
+    return queryDummy(q);
+  }
 
   try {
-    return await fetchBooks(q);
-  } catch {
+    const result = await fetchBooks(q);
+
+    const total = result.pagination?.total ?? result.total;
+    const page = result.pagination?.page ?? result.page ?? q.page;
+    const totalPages = result.pagination?.totalPages ?? result.totalPages;
+
+    if (total === undefined || totalPages === undefined) {
+      throw new Error("Books response is missing pagination data.");
+    }
+
+    return {
+      books: result.books,
+      total,
+      page,
+      totalPages,
+    };
+  } catch (error) {
+    console.error("Books fetch error:", error);
+
     return queryDummy(q);
   }
 }
 
-/**
- *
- * Single book
- * One book by id (Book Details page). Always fresh, because available copies change.
- *
- */
-
-/**
- * Single book
- * One book by ID (Book Details page).
- * Always fresh, because available copies change.
- */
+/* ===== Single book ===== */
+/** One book by ID (Book Details page). Always fresh. */
 export async function getBookById(id: string): Promise<Book | null> {
-  // Use dummy data when API is not configured
   if (!API_URL) {
-    return DUMMY_BOOKS.find((book) => book._id === id) ?? null;
+    return getDummyBook(id);
   }
 
   try {
@@ -174,31 +231,24 @@ export async function getBookById(id: string): Promise<Book | null> {
       cache: "no-store",
     });
 
-    // Book genuinely doesn't exist
-    if (res.status === 404 || res.status === 400) {
+    if (res.status === 400 || res.status === 404) {
       return null;
     }
 
     if (!res.ok) {
-      throw new Error(`Request failed: ${res.status}`);
+      throw new Error(`Failed to fetch book: ${res.status}`);
     }
 
-    return (await res.json()) as Book;
-  } catch {
-    // Fallback to dummy data if API is unavailable
-    return DUMMY_BOOKS.find((book) => book._id === id) ?? null;
+    const payload: ApiResponse<Book> = await res.json();
+
+    if (!payload.success) {
+      throw new Error(payload.message || "Failed to fetch book.");
+    }
+
+    return payload.data;
+  } catch (error) {
+    console.error("Single book fetch error:", error);
+
+    return getDummyBook(id);
   }
 }
-
-/* export async function getBookById(id: string): Promise<Book | null> {
-  if (!API_URL) return DUMMY_BOOKS.find((b) => b._id === id) ?? null;
-
-  const res = await fetch(`${API_URL}/api/books/${encodeURIComponent(id)}`, {
-    cache: "no-store",
-  });
-
-  if (res.status === 404 || res.status === 400) return null;
-  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-
-  return (await res.json()) as Book;
-} */

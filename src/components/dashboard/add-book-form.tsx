@@ -150,7 +150,9 @@ function PreviewCard({
             <Image
               src={image}
               alt="Cover preview"
-              className="h-full w-full object-cover"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
             />
           ) : (
             <div className="grid h-full w-full place-items-center bg-linear-to-br from-emerald-500 to-teal-700 p-6 text-center text-white">
@@ -528,11 +530,21 @@ export default function AddBookForm() {
 
               {preview ? (
                 <div className="flex w-full items-center gap-4 p-4">
-                  <Image
+                  {/* <Image
                     src={preview}
                     alt="Selected cover"
                     className="h-32 w-24 rounded-lg object-cover shadow-lg"
-                  />
+                  /> */}
+
+                  <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded-lg">
+                    <Image
+                      src={preview}
+                      alt="Selected cover"
+                      fill
+                      sizes="96px"
+                      className="object-cover shadow-lg"
+                    />
+                  </div>
 
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">

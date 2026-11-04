@@ -2,13 +2,13 @@
 
 import { motion } from "framer-motion";
 import { ArrowUpRight, BookOpen, PenLine } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import type { Book } from "@/lib/books-config";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 
 export default function BookCard({
   book,
@@ -60,18 +60,23 @@ export default function BookCard({
           <Image
             src={book.image}
             alt={`Cover of ${book.title}`}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             loading="lazy"
             onError={() => setImgFailed(true)}
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
           />
         )}
 
-        <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-90" />
+        {/* Image overlay */}
+        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-90" />
 
+        {/* Category */}
         <span className="absolute left-3 top-3 rounded-full border border-white/25 bg-black/30 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-white backdrop-blur-md">
           {book.category}
         </span>
 
+        {/* Newest badge */}
         {isNewest && (
           <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-amber-300 px-2.5 py-1 text-[11px] font-semibold text-amber-950 shadow-lg">
             <span className="relative flex size-1.5">

@@ -59,8 +59,10 @@ export default function BookCard({
             src={book.image}
             alt={`Cover of ${book.title}`}
             loading="lazy"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             onError={() => setImgFailed(true)}
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
           />
         )}
 

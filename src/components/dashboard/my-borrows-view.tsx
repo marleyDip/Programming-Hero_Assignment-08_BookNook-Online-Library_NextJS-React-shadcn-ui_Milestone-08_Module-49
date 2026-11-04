@@ -64,11 +64,14 @@ function TiltCover({ src, title }: { src: string; title: string }) {
           <Image
             src={src}
             alt={`Cover of ${title}`}
+            fill
+            sizes="56px"
             loading="lazy"
             onError={() => setFailed(true)}
-            className="h-full w-full object-cover"
+            className="object-cover"
           />
         )}
+
         <span className="pointer-events-none absolute inset-0 bg-linear-to-tr from-white/0 via-white/10 to-white/35" />
       </motion.div>
     </div>

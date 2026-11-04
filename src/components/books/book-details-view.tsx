@@ -97,8 +97,11 @@ function TiltCover({ book }: { book: Book }) {
           <Image
             src={book.image}
             alt={`Cover of ${book.title}`}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
             onError={() => setFailed(true)}
-            className="h-full w-full object-cover"
+            className="object-cover"
+            // className="h-full w-full object-cover"
           />
         )}
 

@@ -66,6 +66,7 @@ export default function BorrowPanel({
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
+  const [dates, setDates] = useState({ today: "", returnBy: "" });
 
   const available = book.availableCopies ?? book.totalCopies ?? 1;
 
@@ -90,6 +91,16 @@ export default function BorrowPanel({
     } finally {
       setBusy(false);
     }
+  }
+
+  function openModal() {
+    const now = Date.now(); // fine here: this runs on click, not during render
+    setDates({
+      today: new Date(now).toISOString(),
+      returnBy: new Date(now + BORROW_DAYS * 86_400_000).toISOString(),
+    });
+
+    setOpen(true);
   }
 
   /* ---- blocked states ---- */
@@ -147,18 +158,19 @@ export default function BorrowPanel({
   //   Date.now() + BORROW_DAYS * 86_400_000,
   // ).toISOString();
 
-  const now = new Date();
+  // const now = new Date();
 
-  const today = now.toISOString();
-  const returnBy = new Date(
-    now.getTime() + BORROW_DAYS * 86_400_000,
-  ).toISOString();
+  // const today = now.toISOString();
+  // const returnBy = new Date(
+  //   now.getTime() + BORROW_DAYS * 86_400_000,
+  // ).toISOString();
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={openModal}
+        // onClick={() => setOpen(true)}
         className="group relative inline-flex h-14 w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl bg-linear-to-br from-emerald-500 to-teal-700 px-8 text-base font-semibold text-white shadow-xl shadow-emerald-900/25 outline-none transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-700/30 focus-visible:ring-4 focus-visible:ring-emerald-500/30 active:translate-y-0 active:scale-[0.99] sm:w-auto"
       >
         <BookMarked className="size-5 transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
@@ -175,7 +187,7 @@ export default function BorrowPanel({
       >
         {/* the book */}
         <div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-muted/40 p-3">
-          <div className="h-20 w-14 shrink-0 overflow-hidden rounded-lg bg-muted shadow-md">
+          <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-lg bg-muted shadow-md">
             {imgFailed || !book.image ? (
               <div className="grid h-full place-items-center bg-linear-to-br from-emerald-500 to-teal-700 text-white">
                 <BookOpen className="size-5" />
@@ -183,9 +195,11 @@ export default function BorrowPanel({
             ) : (
               <Image
                 src={book.image}
-                alt=""
+                alt={`Cover of ${book.title}`}
+                fill
+                sizes="56px"
                 onError={() => setImgFailed(true)}
-                className="h-full w-full object-cover"
+                className="object-cover"
               />
             )}
           </div>
@@ -214,7 +228,7 @@ export default function BorrowPanel({
             </p>
 
             <p className="mt-1 font-semibold tabular-nums">
-              {formatDate(today)}
+              {formatDate(dates.today)}
             </p>
           </div>
 
@@ -224,7 +238,7 @@ export default function BorrowPanel({
             </p>
 
             <p className="mt-1 font-semibold tabular-nums">
-              {formatDate(returnBy)}
+              {formatDate(dates.returnBy)}
             </p>
           </div>
         </div>

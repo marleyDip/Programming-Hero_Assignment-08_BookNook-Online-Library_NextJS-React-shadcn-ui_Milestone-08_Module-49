@@ -1,6 +1,14 @@
 "use client";
 
-import { authClient } from "@/lib/auth-client";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   BookMarked,
@@ -15,19 +23,10 @@ import { toast } from "sonner";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
-
-import { buttonVariants } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth-client";
 import { UserMenu } from "./user-menu";
 
 // AUTH PLACEHOLDER: replace with your real auth (NextAuth, Firebase, etc.)
@@ -191,7 +190,7 @@ function AccountLoading() {
 }
 
 // Desktop links with gliding hover pill & gliding active underline
-function DesktopLinks({
+function DesktopLinksView({
   links,
   pathname,
   loading,
@@ -276,6 +275,21 @@ function DesktopLinks({
 
       {loading && <LinkSkeletons />}
     </nav>
+  );
+}
+
+/** Reads the URL. Must sit inside <Suspense> (needed on dynamic routes like /books/[id]). */
+function DesktopLinks({
+  links,
+  loading,
+}: {
+  links: NavLink[];
+  loading?: boolean;
+}) {
+  const pathname = usePathname();
+
+  return (
+    <DesktopLinksView links={links} pathname={pathname} loading={loading} />
   );
 }
 
@@ -384,7 +398,7 @@ function AuthButtons() {
 }
 
 // Mobile menu
-function MobileMenu({
+function MobileMenuView({
   links,
   pathname,
   loggedIn,
@@ -481,9 +495,20 @@ function MobileMenu({
   );
 }
 
+function MobileMenu(props: {
+  links: NavLink[];
+  loggedIn: boolean;
+  loading?: boolean;
+}) {
+  const pathname = usePathname();
+
+  return <MobileMenuView {...props} pathname={pathname} />;
+}
+
 // Navbar
 export default function Navbar() {
-  const pathname = usePathname();
+  // const pathname = usePathname();
+
   const { user, pending, likelyAuthed, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
 
@@ -515,21 +540,53 @@ export default function Navbar() {
         )}
       >
         <div className="flex items-center gap-2">
-          <MobileMenu
+          {/* <MobileMenu
             links={visibleLinks}
             pathname={pathname}
             loggedIn={!!user}
             loading={pending && likelyAuthed}
-          />
+          /> */}
+
+          <Suspense
+            fallback={
+              <MobileMenuView
+                links={visibleLinks}
+                pathname=""
+                loggedIn={!!user}
+                loading={pending && likelyAuthed}
+              />
+            }
+          >
+            <MobileMenu
+              links={visibleLinks}
+              loggedIn={!!user}
+              loading={pending && likelyAuthed}
+            />
+          </Suspense>
 
           <Logo />
         </div>
 
-        <DesktopLinks
+        {/* <DesktopLinks
           links={visibleLinks}
           pathname={pathname}
           loading={pending && likelyAuthed}
-        />
+        /> */}
+
+        <Suspense
+          fallback={
+            <DesktopLinksView
+              links={visibleLinks}
+              pathname=""
+              loading={pending && likelyAuthed}
+            />
+          }
+        >
+          <DesktopLinks
+            links={visibleLinks}
+            loading={pending && likelyAuthed}
+          />
+        </Suspense>
 
         <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />

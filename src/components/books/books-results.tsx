@@ -61,7 +61,11 @@ export function GridSkeleton({ count = 10 }: { count?: number }) {
 
 /* Results */
 export default async function BooksResults({ query }: { query: BookQuery }) {
-  const { books, total, page, totalPages } = await getBooks(query);
+  // const { books, total, page, totalPages } = await getBooks(query);
+
+  const result = await getBooks(query);
+  const books = result.books ?? [];
+  const { total, page, totalPages } = result;
 
   /* Empty State */
   if (books.length === 0) {
