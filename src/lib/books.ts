@@ -10,6 +10,7 @@ import {
   type BookQuery,
   type BooksResult,
 } from "@/lib/books-config";
+import { getApiToken } from "@/lib/server-auth";
 
 // Set NEXT_PUBLIC_API_URL=http://localhost:5000 in .env.local to use the real API.
 // Without it (or if the API is down) the dummy data below is used.
@@ -227,7 +228,26 @@ export async function getBookById(id: string): Promise<Book | null> {
   }
 
   try {
+    const token = await getApiToken();
+    // console.log(token);
+
+    if (!token) {
+      throw new Error("Authentication token not found.");
+    }
+
     const res = await fetch(`${API_URL}/api/books/${encodeURIComponent(id)}`, {
+      // headers: {
+      //   authorization: "user logged in",
+      // },
+
+      // headers: {
+      //   authorization: token,
+      // },
+
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+
       cache: "no-store",
     });
 

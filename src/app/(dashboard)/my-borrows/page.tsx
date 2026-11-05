@@ -26,12 +26,13 @@ async function MyBorrowsData() {
   let borrows: Borrow[];
 
   try {
-    const response = await apiFetch<ApiResponse<Omit<Borrow, "daysLeft">[]>>(
-      `/api/borrows?email=${encodeURIComponent(user.email)}`,
-    );
+    const response =
+      await apiFetch<ApiResponse<Omit<Borrow, "daysLeft">[]>>("/api/borrows");
 
-    if (!response.success) {
-      throw new Error(response.message);
+    if (!response.success || !response.data) {
+      throw new Error(
+        response.message || "Could not load your borrowing records.",
+      );
     }
 
     // Calculate days left on the server

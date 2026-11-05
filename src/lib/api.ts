@@ -1,12 +1,15 @@
-/** Place at: src/lib/api.ts  (SERVER ONLY: never import from a Client Component) */
+import "server-only";
+
+import { getApiToken } from "@/lib/server-auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
-const API_KEY = process.env.INTERNAL_API_KEY;
 
 export class ApiError extends Error {
   status: number;
+
   constructor(message: string, status: number) {
     super(message);
+    this.name = "ApiError";
     this.status = status;
   }
 }
@@ -15,61 +18,105 @@ export async function apiFetch<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
-  if (!API_URL)
+  if (!API_URL) {
     throw new Error(
       "The API is not connected. Set NEXT_PUBLIC_API_URL in .env.local.",
     );
+  }
+
+  const token = await getApiToken();
+
+  const fetchHeaders = new Headers(init.headers);
+
+  fetchHeaders.set("Content-Type", "application/json");
+
+  if (token) {
+    fetchHeaders.set("Authorization", `Bearer ${token}`);
+  }
 
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
+    headers: fetchHeaders,
     cache: "no-store",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": API_KEY ?? "",
-      ...init.headers,
-    },
   });
 
   const data = await res.json().catch(() => ({}));
-  if (!res.ok)
+
+  if (!res.ok) {
     throw new ApiError(
       (data as { message?: string }).message ||
         `Request failed (${res.status})`,
       res.status,
     );
+  }
+
   return data as T;
 }
 
-// const API_URL = process.env.NEXT_PUBLIC_API_URL;
-// const API_KEY = process.env.INTERNAL_API_KEY;
+/* import "server-only";
 
-// export async function apiFetch<T>(
-//   path: string,
-//   init: RequestInit = {},
-// ): Promise<T> {
-//   if (!API_URL)
-//     throw new Error(
-//       "The API is not connected. Set NEXT_PUBLIC_API_URL in .env.local.",
-//     );
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
-//   const res = await fetch(`${API_URL}${path}`, {
-//     ...init,
-//     cache: "no-store",
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-//     headers: {
-//       "Content-Type": "application/json",
-//       "x-api-key": API_KEY ?? "",
-//       ...init.headers,
-//     },
-//   });
+export class ApiError extends Error {
+  status: number;
 
-//   const data = await res.json().catch(() => ({}));
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
 
-//   if (!res.ok)
-//     throw new Error(
-//       (data as { message?: string }).message ||
-//         `Request failed (${res.status})`,
-//     );
+export async function apiFetch<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  if (!API_URL) {
+    throw new Error(
+      "The API is not connected. Set NEXT_PUBLIC_API_URL in .env.local.",
+    );
+  }
 
-//   return data as T;
-// }
+  // Get incoming Next.js request headers
+  const requestHeaders = await headers();
+
+  // Check authenticated session
+  const session = await auth.api.getSession({
+    headers: requestHeaders,
+  });
+
+  // Prepare request headers
+  const fetchHeaders = new Headers(init.headers);
+
+  fetchHeaders.set("Content-Type", "application/json");
+
+  // Attach Better Auth JWT when authenticated
+  if (session) {
+    const { token } = await auth.api.getToken({
+      headers: requestHeaders,
+    });
+
+    fetchHeaders.set("Authorization", `Bearer ${token}`);
+  }
+
+  const res = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers: fetchHeaders,
+    cache: "no-store",
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new ApiError(
+      (data as { message?: string }).message ||
+        `Request failed (${res.status})`,
+      res.status,
+    );
+  }
+
+  return data as T;
+} */

@@ -26,18 +26,18 @@ async function MyBooksData() {
   if (!user) redirect("/login?callbackUrl=/my-books");
 
   let books: Book[];
-  try {
-    const response = await apiFetch<ApiResponse<Book[]>>(
-      `/api/my-books?email=${encodeURIComponent(user.email)}`,
-    );
 
-    if (!response.success) {
-      throw new Error(response.message);
+  try {
+    const response = await apiFetch<ApiResponse<Book[]>>("/api/my-books");
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "Could not load your books.");
     }
 
     books = response.data;
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Please try again.";
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Please try again.";
 
     return <ErrorNote message={message} />;
   }

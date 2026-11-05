@@ -1,7 +1,6 @@
 "use server";
 
 /**
- * Place at: src/lib/actions.ts
  * Server Actions. The user's name and email come from the Better Auth SESSION on the
  * server, never from the browser, so nobody can add, delete or borrow as someone else.
  */
@@ -32,7 +31,7 @@ export async function addBookAction(
     return { ok: false, error: "Please log in to add a book." };
   }
 
-  // Validate book ID-independent input
+  // 1. Validate required fields
   if (
     typeof input.title !== "string" ||
     !input.title.trim() ||
@@ -45,6 +44,7 @@ export async function addBookAction(
     };
   }
 
+  // 2. Validate category
   if (!CATEGORIES.includes(input.category)) {
     return {
       ok: false,
@@ -52,6 +52,7 @@ export async function addBookAction(
     };
   }
 
+  // 3. Validate image
   if (typeof input.image !== "string" || !input.image.trim()) {
     return {
       ok: false,
@@ -59,6 +60,7 @@ export async function addBookAction(
     };
   }
 
+  // 4. Validate total copies
   if (
     !Number.isInteger(input.totalCopies) ||
     input.totalCopies < 1 ||
@@ -71,6 +73,7 @@ export async function addBookAction(
   }
 
   try {
+    // 5. Send request
     const response = await apiFetch<ApiResponse<unknown>>("/api/books", {
       method: "POST",
       body: JSON.stringify({
@@ -78,8 +81,10 @@ export async function addBookAction(
         title: input.title.trim(),
         author: input.author.trim(),
         image: input.image.trim(),
-        ownerName: user.name,
-        ownerEmail: user.email,
+
+        // Backend derives ownership from JWT
+        // ownerName: user.name,
+        // ownerEmail: user.email,
       }),
     });
 
@@ -90,6 +95,7 @@ export async function addBookAction(
       };
     }
 
+    // 6. Revalidate cached data
     updateTag("books");
     revalidatePath("/my-books");
 
@@ -101,40 +107,6 @@ export async function addBookAction(
     return fail(error, "Could not add the book.");
   }
 }
-
-/* export async function addBookAction(
-  input: AddBookInput,
-): Promise<ActionResult> {
-  const user = await getSessionUser();
-  if (!user) return { ok: false, error: "Please log in to add a book." };
-
-  // server-side validation (the form validates too)
-  if (!input.title.trim() || !input.author.trim())
-    return { ok: false, error: "Title and author are required." };
-  if (!CATEGORIES.includes(input.category))
-    return { ok: false, error: "Please choose a valid category." };
-  if (!input.image) return { ok: false, error: "Please upload a cover image." };
-  if (!Number.isInteger(input.totalCopies) || input.totalCopies < 1)
-    return { ok: false, error: "Total copies must be at least 1." };
-
-  try {
-    await apiFetch("/api/books", {
-      method: "POST",
-      body: JSON.stringify({
-        ...input,
-        ownerName: user.name, // from the session
-        ownerEmail: user.email, // from the session
-      }),
-    });
-  } catch (e) {
-    return fail(e, "Could not add the book.");
-  }
-
-  updateTag("books"); // refresh the cached book lists (New Arrivals, All Books)
-  revalidatePath("/my-books");
-
-  return { ok: true, message: "Book added successfully!" };
-} */
 
 export async function updateBookAction(
   bookId: string,
@@ -153,7 +125,12 @@ export async function updateBookAction(
   }
 
   // 3. Validate required fields
-  if (!input.title?.trim() || !input.author?.trim()) {
+  if (
+    typeof input.title !== "string" ||
+    !input.title.trim() ||
+    typeof input.author !== "string" ||
+    !input.author.trim()
+  ) {
     return {
       ok: false,
       error: "Title and author are required.",
@@ -183,10 +160,14 @@ export async function updateBookAction(
   try {
     // 6. Update book through backend API
     const response = await apiFetch<ApiResponse<unknown>>(
-      `/api/books/${encodeURIComponent(bookId)}?email=${encodeURIComponent(user.email)}`,
+      `/api/books/${encodeURIComponent(bookId)}`,
       {
         method: "PUT",
-        body: JSON.stringify(input),
+        body: JSON.stringify({
+          ...input,
+          title: input.title.trim(),
+          author: input.author.trim(),
+        }),
       },
     );
 
@@ -208,44 +189,13 @@ export async function updateBookAction(
       ok: true,
       message: response.message || "Book updated successfully!",
     };
-  } catch (e) {
-    return fail(e, "Could not update the book.");
+  } catch (error) {
+    return fail(error, "Could not update the book.");
   }
 }
 
-/* export async function updateBookAction(
-  bookId: string,
-  input: UpdateBookInput,
-): Promise<ActionResult> {
-  const user = await getSessionUser();
-  if (!user) return { ok: false, error: "Please log in first." };
-
-  if (!input.title.trim() || !input.author.trim())
-    return { ok: false, error: "Title and author are required." };
-  if (!CATEGORIES.includes(input.category))
-    return { ok: false, error: "Please choose a valid category." };
-  if (!Number.isInteger(input.totalCopies) || input.totalCopies < 1)
-    return { ok: false, error: "Total copies must be at least 1." };
-
-  try {
-    await apiFetch(
-      `/api/books/${encodeURIComponent(bookId)}?email=${encodeURIComponent(user.email)}`,
-      {
-        method: "PUT",
-        body: JSON.stringify(input),
-      },
-    );
-  } catch (e) {
-    return fail(e, "Could not update the book.");
-  }
-
-  updateTag("books");
-  revalidatePath("/my-books");
-  revalidatePath(`/books/${bookId}`);
-  return { ok: true, message: "Book updated successfully!" };
-} */
-
 export async function deleteBookAction(bookId: string): Promise<ActionResult> {
+  // 1. Authentication
   const user = await getSessionUser();
 
   if (!user) {
@@ -255,7 +205,7 @@ export async function deleteBookAction(bookId: string): Promise<ActionResult> {
     };
   }
 
-  // Validate MongoDB ObjectId
+  // 2. Validate MongoDB ObjectId
   if (!/^[a-f\d]{24}$/i.test(bookId)) {
     return {
       ok: false,
@@ -264,8 +214,9 @@ export async function deleteBookAction(bookId: string): Promise<ActionResult> {
   }
 
   try {
+    // 3. Delete book through backend API
     const response = await apiFetch<ApiResponse<{ _id: string }>>(
-      `/api/books/${encodeURIComponent(bookId)}?email=${encodeURIComponent(user.email)}`,
+      `/api/books/${encodeURIComponent(bookId)}`,
       {
         method: "DELETE",
       },
@@ -278,11 +229,13 @@ export async function deleteBookAction(bookId: string): Promise<ActionResult> {
       };
     }
 
-    // Invalidate cached book data
+    // 4. Invalidate cached book data
     updateTag("books");
+
     revalidatePath("/my-books");
     revalidatePath(`/books/${bookId}`);
 
+    // 5. Success
     return {
       ok: true,
       message: response.message || "Book deleted successfully.",
@@ -291,26 +244,6 @@ export async function deleteBookAction(bookId: string): Promise<ActionResult> {
     return fail(error, "Could not delete the book.");
   }
 }
-
-/* export async function deleteBookAction(bookId: string): Promise<ActionResult> {
-  const user = await getSessionUser();
-  if (!user) return { ok: false, error: "Please log in first." };
-
-  try {
-    await apiFetch(
-      `/api/books/${encodeURIComponent(bookId)}?email=${encodeURIComponent(user.email)}`,
-      {
-        method: "DELETE",
-      },
-    );
-  } catch (e) {
-    return fail(e, "Could not delete the book.");
-  }
-
-  updateTag("books");
-  revalidatePath("/my-books");
-  return { ok: true, message: "Book deleted." };
-} */
 
 export async function borrowBookAction(bookId: string): Promise<ActionResult> {
   const user = await getSessionUser();
@@ -342,8 +275,6 @@ export async function borrowBookAction(bookId: string): Promise<ActionResult> {
       method: "POST",
       body: JSON.stringify({
         bookId,
-        userEmail: user.email,
-        userName: user.name,
       }),
     });
 
@@ -369,27 +300,6 @@ export async function borrowBookAction(bookId: string): Promise<ActionResult> {
   }
 }
 
-/* export async function borrowBookAction(bookId: string): Promise<ActionResult> {
-  const user = await getSessionUser();
-  if (!user) return { ok: false, error: "Please log in to borrow a book." };
-
-  try {
-    const data = await apiFetch<{ message: string }>("/api/borrows", {
-      method: "POST",
-      body: JSON.stringify({
-        bookId,
-        userEmail: user.email,
-        userName: user.name,
-      }),
-    });
-    updateTag("books"); // available copies changed
-    revalidatePath("/my-borrows");
-    return { ok: true, message: data.message };
-  } catch (e) {
-    return fail(e, "Could not borrow the book.");
-  }
-} */
-
 export async function returnBorrowAction(
   borrowId: string,
 ): Promise<ActionResult> {
@@ -402,6 +312,7 @@ export async function returnBorrowAction(
     };
   }
 
+  // Validate MongoDB ObjectId
   if (!/^[a-f\d]{24}$/i.test(borrowId)) {
     return {
       ok: false,
@@ -419,9 +330,6 @@ export async function returnBorrowAction(
       }>
     >(`/api/borrows/${encodeURIComponent(borrowId)}/return`, {
       method: "PATCH",
-      body: JSON.stringify({
-        userEmail: user.email,
-      }),
     });
 
     if (!response.success) {
@@ -445,25 +353,3 @@ export async function returnBorrowAction(
     return fail(error, "Could not return the book.");
   }
 }
-
-/* export async function returnBorrowAction(
-  borrowId: string,
-): Promise<ActionResult> {
-  const user = await getSessionUser();
-  if (!user) return { ok: false, error: "Please log in first." };
-
-  try {
-    const data = await apiFetch<{ message: string }>(
-      `/api/borrows/${encodeURIComponent(borrowId)}/return`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ userEmail: user.email }),
-      },
-    );
-    updateTag("books");
-    revalidatePath("/my-borrows");
-    return { ok: true, message: data.message };
-  } catch (e) {
-    return fail(e, "Could not return the book.");
-  }
-} */

@@ -11,13 +11,6 @@ import { getBookById } from "@/lib/books";
 import { ApiResponse } from "@/lib/dashboard-types";
 import { getSessionUser } from "@/lib/session";
 
-/* export const metadata: Metadata = {
-  title: "Book Details",
-  description:
-    "Everything about this book, and how to borrow it from BookNook.",
-  robots: { index: false, follow: false }, // private page
-}; */
-
 // Dynamic SEO metadata from the real book data
 export async function generateMetadata({
   params,
@@ -84,28 +77,30 @@ export async function generateMetadata({
 }
 
 // Book details
+
 async function Details({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  // const [user, book] = await Promise.all([getSessionUser(), getBookById(id)]);
-
   const user = await getSessionUser();
-  if (!user)
+
+  if (!user) {
     redirect(`/login?callbackUrl=${encodeURIComponent(`/books/${id}`)}`);
+  }
 
   const book = await getBookById(id);
+
   if (!book) notFound();
 
   // Check whether the logged-in user has already borrowed this book
-  // has this user already borrowed it (and not returned it yet)?
   let alreadyBorrowed = false;
 
   try {
-    const response = await apiFetch<
-      ApiResponse<{ bookId: string; status: string }[]>
-    >(`/api/borrows?email=${encodeURIComponent(user.email)}`);
+    const response =
+      await apiFetch<ApiResponse<{ bookId: string; status: string }[]>>(
+        "/api/borrows",
+      );
 
-    if (response.success) {
+    if (response.success && response.data) {
       alreadyBorrowed = response.data.some(
         (borrow) =>
           String(borrow.bookId) === id && borrow.status === "borrowed",
@@ -115,12 +110,7 @@ async function Details({ params }: { params: Promise<{ id: string }> }) {
     console.error("Check borrowing status error:", error);
   }
 
-  // const isOwner = Boolean(
-  //   user &&
-  //   book.ownerEmail &&
-  //   book.ownerEmail.toLowerCase() === user.email.toLowerCase(),
-  // );
-
+  // Check book ownership
   const isOwner =
     !!book.ownerEmail &&
     book.ownerEmail.toLowerCase() === user.email.toLowerCase();
