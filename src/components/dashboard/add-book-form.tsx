@@ -333,6 +333,7 @@ export default function AddBookForm() {
       toast.success(result.message, { id: toastId });
 
       router.push("/my-books");
+      // router.refresh();
     } catch (err) {
       toast.error(
         err instanceof Error

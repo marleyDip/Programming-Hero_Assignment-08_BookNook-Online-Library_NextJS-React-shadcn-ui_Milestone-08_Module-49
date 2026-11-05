@@ -4,13 +4,14 @@
 
 import { cacheLife, cacheTag } from "next/cache";
 
+// import { ApiError, apiFetch } from "@/lib/api";
 import {
   PAGE_SIZE,
   type Book,
   type BookQuery,
   type BooksResult,
 } from "@/lib/books-config";
-import { getApiToken } from "@/lib/server-auth";
+import { getApiToken } from "./server-auth";
 
 // Set NEXT_PUBLIC_API_URL=http://localhost:5000 in .env.local to use the real API.
 // Without it (or if the API is down) the dummy data below is used.
@@ -272,3 +273,29 @@ export async function getBookById(id: string): Promise<Book | null> {
     return getDummyBook(id);
   }
 }
+
+/* export async function getBookById(id: string): Promise<Book | null> {
+  if (!API_URL) {
+    return getDummyBook(id);
+  }
+
+  try {
+    const response = await apiFetch<ApiResponse<Book>>(
+      `/api/books/${encodeURIComponent(id)}`,
+    );
+
+    if (!response.success || !response.data) {
+      return null;
+    }
+
+    return response.data;
+  } catch (error) {
+    if (error instanceof ApiError && [400, 404].includes(error.status)) {
+      return null;
+    }
+
+    console.error("Single book fetch error:", error);
+
+    return null;
+  }
+} */

@@ -1,7 +1,6 @@
 "use client";
 
-/** Place at: src/components/dashboard/my-books-view.tsx
- *  Cards with Edit (opens a pre-filled form) and Delete (opens a confirm modal). */
+/* Cards with Edit (opens a pre-filled form) and Delete (opens a confirm modal). */
 
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -164,9 +163,15 @@ export default function MyBooksView({ books: initial }: { books: Book[] }) {
   // console.log(initial);
 
   const [books, setBooks] = useState(initial);
+  const [previousInitial, setPreviousInitial] = useState(initial);
   const [editing, setEditing] = useState<Book | null>(null);
   const [deleting, setDeleting] = useState<Book | null>(null);
   const [pending, startTransition] = useTransition();
+
+  if (initial !== previousInitial) {
+    setPreviousInitial(initial);
+    setBooks(initial);
+  }
 
   function confirmDelete() {
     if (!deleting) return;

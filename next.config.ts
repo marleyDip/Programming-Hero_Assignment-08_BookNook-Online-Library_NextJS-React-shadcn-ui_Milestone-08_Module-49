@@ -32,6 +32,12 @@ const nextConfig: NextConfig = {
         hostname: "i.ibb.co",
         pathname: "/**",
       },
+      // This allows HTTPS images from any hostname.
+      {
+        protocol: "https",
+        hostname: "**",
+        pathname: "/**",
+      },
     ],
   },
 };
